@@ -13,14 +13,32 @@ import cors from "cors"
 import morgan from "morgan"
 import MainController from "./controllers/MainController.js"
 import APIController from "./controllers/APIController.js"
-
+import mongoose from "mongoose"
 // *********************************
 // Global Variables & Controller Instantiation
 // *********************************
 const PORT = process.env.PORT || 3333
+const DATABASE_URL = process.env.DATABASE_URL
 const mainController = new MainController()
 const apiController = new APIController()
 
+// *********************************
+// MongoDB Connection
+// *********************************
+mongoose.connect(DATABASE_URL)
+mongoose.connection
+.on("open", () => console.log("MongoDB Connected"))
+.on("close", () => console.log("MongoDB disconnected"))
+.on("error", (err) => console.log(err))
+
+// *********************************
+// Todo Model Object
+// *********************************
+const TodoSchema = new mongoose.Schema({
+    message: String,
+    completed: Boolean
+})
+const Todo = mongoose.model("Todo", TodoSchema)
 // *********************************
 // Creating Application Object
 // *********************************
@@ -41,6 +59,12 @@ app.use(express.json())
 app.use(methodOverride("_method"))
 app.use("/static", express.static("static"))
 app.use(morgan("tiny"))
+app.use((req, res, next) => {
+    req.models = {
+        Todo
+    }
+    next()
+})
 app.use("/", MainRoutes)
 app.use("/api", APIRoutes)
 // Router Specific Middleware
